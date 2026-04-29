@@ -47,9 +47,9 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::patch('/shifts/{shift}/close', [\App\Http\Controllers\ShiftController::class, 'close'])->name('shifts.close');
 
     // Cash Entry (TASK-05)
-    // Route::get('/cash', [CashEntryController::class, 'index'])->name('cash.index');
-    // Route::post('/cash', [CashEntryController::class, 'store'])->name('cash.store');
-    // Route::delete('/cash/{transaction}', [CashEntryController::class, 'destroy'])->name('cash.destroy');
+    Route::get('/cash', [\App\Http\Controllers\CashEntryController::class, 'index'])->name('cash.index');
+    Route::post('/cash', [\App\Http\Controllers\CashEntryController::class, 'store'])->name('cash.store');
+    Route::delete('/cash/{transaction}', [\App\Http\Controllers\CashEntryController::class, 'destroy'])->name('cash.destroy');
 
     // Transactions (TASK-08)
     // Route::resource('transactions', TransactionController::class)->only(['index', 'edit', 'update', 'destroy']);
