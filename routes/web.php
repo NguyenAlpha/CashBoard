@@ -61,7 +61,9 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::post('/import/{batch}/map', [\App\Http\Controllers\ImportController::class, 'map'])->name('import.map');
 
     // Export (TASK-10)
-    // Route::get('/export/transactions', [ExportController::class, 'transactions'])->name('export.transactions');
+    Route::get('/export', [\App\Http\Controllers\ExportController::class, 'index'])->name('export.index');
+    Route::get('/export/transactions', [\App\Http\Controllers\ExportController::class, 'transactions'])->name('export.transactions');
+    Route::get('/export/summary', [\App\Http\Controllers\ExportController::class, 'summary'])->name('export.summary');
 
     // Owner-only areas
     Route::middleware('owner')->group(function () {
