@@ -21,8 +21,9 @@ class StoreContext
     public static function activate(Store $store): void
     {
         session([
-            'active_store_id'   => $store->id,
-            'active_store_name' => $store->name,
+            'active_store_id'       => $store->id,
+            'active_store_name'     => $store->name,
+            'active_store_timezone' => $store->timezone,
         ]);
     }
 }
