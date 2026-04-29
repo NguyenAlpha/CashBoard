@@ -70,4 +70,6 @@ Route::middleware(['auth', 'store.access'])->group(function () {
 });
 
 // ─── Inbound email webhook (TASK-07) ─────────────────────────────────────────
-// Route::post('/api/inbound-email', [InboundEmailController::class, 'receive'])->name('inbound.email');
+// CSRF excluded qua bootstrap/app.php validateCsrfTokens(except: [...])
+Route::post('/api/inbound-email/{token}', [\App\Http\Controllers\InboundEmailController::class, 'receive'])
+    ->name('inbound.email');

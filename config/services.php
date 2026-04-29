@@ -14,6 +14,10 @@ return [
     |
     */
 
+    'mailgun' => [
+        'webhook_signing_key' => env('MAILGUN_WEBHOOK_SIGNING_KEY', ''),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'owner'        => \App\Http\Middleware\EnsureOwner::class,
             'store.access' => \App\Http\Middleware\EnsureStoreAccess::class,
         ]);
+
+        // Mailgun webhook không gửi CSRF token
+        $middleware->validateCsrfTokens(except: [
+            '/api/inbound-email/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
