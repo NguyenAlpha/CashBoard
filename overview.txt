@@ -1,0 +1,108 @@
+vấn đề và giải pháp
+📝 NOTE Ý TƯỞNG SAAS – GOM GIAO DỊCH CHO QUÁN NHỎ
+1️⃣ VẤN ĐỀ (Problem)
+Đối tượng
+Quán ăn / cà phê nhỏ
+1–2 chi nhánh, ít nhân viên
+Không có hệ thống POS đầy đủ
+Thực trạng
+Thu tiền từ nhiều nguồn:
+QR ngân hàng (VietQR/Napas)
+Ví điện tử
+Quẹt thẻ / SoftPOS
+Tiền mặt
+Mỗi nguồn = 1 app / 1 nơi khác nhau
+Nỗi đau thật sự
+❌ Không biết hôm nay tổng thu bao nhiêu
+❌ Không biết ca nào / nhân viên nào thu
+❌ Cuối ngày phải:
+mở nhiều app
+cộng tay / Excel
+❌ Dễ:
+thiếu tiền
+lệch ca
+tranh cãi nội bộ
+Thanh toán đã được giải quyết.
+ Quản lý dòng tiền thì CHƯA.
+
+2️⃣ GIẢI PHÁP (Solution)
+Bản chất sản phẩm
+👉 SaaS “Trung tâm dòng tiền cho quán nhỏ”
+KHÔNG phải POS bán hàng
+KHÔNG xử lý thanh toán
+Chỉ GOM – CHUẨN HÓA – HIỂN THỊ – BÁO CÁO tiền
+
+3️⃣ SAAS LÀM GÌ CỤ THỂ?
+✅ Gom giao dịch từ nhiều nguồn:
+QR ngân hàng:
+email notification
+import sao kê
+Ví / POS / SoftPOS:
+export / webhook (khi có)
+Tiền mặt:
+nhập tổng theo ca/ngày
+👉 Tất cả → 1 bảng giao dịch chung
+
+✅ Chuẩn hóa dữ liệu
+Mỗi giao dịch chỉ cần:
+số tiền
+thời gian
+nguồn (QR / thẻ / tiền mặt)
+ca làm / nhân viên
+Không cần hoàn hảo – cần đủ đúng để quản lý
+
+✅ Dashboard cho CHỦ QUÁN
+Doanh thu hôm nay
+So với hôm qua
+Theo ca, theo nguồn
+Phát hiện bất thường nhanh
+
+✅ Báo cáo
+Xuất Excel:
+cuối ngày
+tuần
+tháng
+Giao cho kế toán / đối soát
+
+4️⃣ PHẠM VI MVP (RẤT QUAN TRỌNG)
+MVP KHÔNG CẦN
+API ngân hàng chính thức
+Tự động 100%
+POS bán hàng
+Pháp lý fintech phức tạp
+MVP CHỈ CẦN
+Email parser
+Import file
+Nhập tiền mặt
+Dashboard + báo cáo
+Thu phí thuê bao
+
+5️⃣ MÔ HÌNH KIẾM TIỀN
+Thu phí thuê bao
+~199.000 VNĐ / tháng / cửa hàng
+Giá trị đổi lại
+Giảm thất thoát
+Giảm thời gian ngồi cộng sổ
+Đỡ cãi nhau cuối ngày
+199k/tháng < 1 lần lệch tiền
+
+6️⃣ CHIẾN LƯỢC DÀI HẠN (ĐỂ SAU)
+Ban đầu:
+semi‑auto (email, import)
+Khi có 10–50 quán dùng thật:
+hợp tác SoftPOS / PSP
+Khi đủ lớn:
+API chính thức
+tự động ~99%
+👉 API không phải điểm bắt đầu, mà là phần thưởng sau khi có user
+
+7️⃣ TRIẾT LÝ CỐT LÕI
+Không giải quyết bài toán ngân hàng.
+ Chỉ giải quyết bài toán CHỦ QUÁN.
+MVP trước
+Kiếm tiền trước
+Mở rộng sau
+
+✅ 1 CÂU TỰ NHẮC MÌNH
+“Sản phẩm này tồn tại để chủ quán biết tiền đi đâu,
+ chứ không phải để làm ngân hàng.”
