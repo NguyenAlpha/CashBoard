@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Helpers\StoreContext;
+use App\Models\Employee;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +18,7 @@ class EnsureStoreAccess
             return redirect()->route('login');
         }
 
-        // Owner: chỉ truy cập store của mình
+        // Owner: tự động chọn store đầu tiên nếu chưa có active store
         if ($user->isOwner() && ! session()->has('active_store_id')) {
             $store = $user->stores()->where('is_active', true)->first();
 
@@ -25,22 +27,21 @@ class EnsureStoreAccess
                     ->with('info', 'Vui lòng tạo cửa hàng trước.');
             }
 
-            session(['active_store_id' => $store->id]);
+            StoreContext::activate($store);
         }
 
         // Staff: lấy store qua bảng employees
-        if ($user->isStaff()) {
-            $employee = \App\Models\Employee::where('user_id', $user->id)
+        if ($user->isStaff() && ! session()->has('active_store_id')) {
+            $employee = Employee::where('user_id', $user->id)
                 ->where('is_active', true)
+                ->with('store')
                 ->first();
 
             if (! $employee) {
                 abort(403, 'Tài khoản chưa được gắn với cửa hàng nào.');
             }
 
-            if (! session()->has('active_store_id')) {
-                session(['active_store_id' => $employee->store_id]);
-            }
+            StoreContext::activate($employee->store);
         }
 
         return $next($request);

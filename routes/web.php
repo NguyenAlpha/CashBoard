@@ -18,8 +18,8 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth');
 
 // ─── Onboarding (auth only, trước khi có store) ──────────────────────────────
-// Các route này KHÔNG dùng store.access để tránh redirect loop khi chưa có store
-Route::middleware('auth')->group(function () {
+// Không dùng store.access để tránh redirect loop khi chưa có store
+Route::middleware(['auth', 'owner'])->group(function () {
     Route::get('/stores/create', [\App\Http\Controllers\StoreController::class, 'create'])->name('stores.create');
     Route::post('/stores', [\App\Http\Controllers\StoreController::class, 'store'])->name('stores.store');
 });
@@ -29,9 +29,10 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::get('/', fn () => redirect()->route('dashboard'));
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
-    // Stores — edit/update (TASK-03)
+    // Stores — edit/update/activate (TASK-03)
     Route::get('/stores/{store}/edit', [\App\Http\Controllers\StoreController::class, 'edit'])->name('stores.edit');
     Route::patch('/stores/{store}', [\App\Http\Controllers\StoreController::class, 'update'])->name('stores.update');
+    Route::post('/stores/{store}/activate', [\App\Http\Controllers\StoreController::class, 'activate'])->name('stores.activate');
 
     // Employees (TASK-04)
     // Route::resource('employees', EmployeeController::class)->except('destroy');
@@ -60,6 +61,7 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::middleware('owner')->group(function () {
         Route::get('/stores', [\App\Http\Controllers\StoreController::class, 'index'])->name('stores.index');
     });
+
 });
 
 // ─── Inbound email webhook (TASK-07) ─────────────────────────────────────────

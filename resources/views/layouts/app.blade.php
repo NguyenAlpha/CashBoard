@@ -17,13 +17,15 @@
 
             <div class="flex items-center gap-4 text-sm">
                 @auth
-                    {{-- Store selector nếu owner có nhiều store --}}
-                    @if(auth()->user()->isOwner() && auth()->user()->stores->count() > 1)
-                        <span class="text-gray-500">
-                            {{ session('active_store_name', 'Cửa hàng') }}
-                        </span>
+                    {{-- Tên store đang active --}}
+                    @if(session('active_store_name'))
+                        <a href="{{ route('stores.index') }}"
+                            class="text-gray-600 hover:text-orange-500 transition font-medium hidden sm:inline">
+                            🏪 {{ session('active_store_name') }}
+                        </a>
                     @endif
 
+                    <span class="text-gray-400 hidden sm:inline">|</span>
                     <span class="text-gray-600 hidden sm:inline">{{ auth()->user()->name }}</span>
 
                     <form method="POST" action="{{ route('logout') }}">
