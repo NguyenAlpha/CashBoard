@@ -11,7 +11,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'owner'        => \App\Http\Middleware\EnsureOwner::class,
+            'store.access' => \App\Http\Middleware\EnsureStoreAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

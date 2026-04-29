@@ -28,12 +28,10 @@ class EnsureStoreAccess
             session(['active_store_id' => $store->id]);
         }
 
-        // Staff: kiểm tra store được giao
+        // Staff: lấy store qua bảng employees
         if ($user->isStaff()) {
-            $employee = $user->stores()
-                ->getRelated()
-                ->newQuery()
-                ->whereHas('employees', fn ($q) => $q->where('user_id', $user->id)->where('is_active', true))
+            $employee = \App\Models\Employee::where('user_id', $user->id)
+                ->where('is_active', true)
                 ->first();
 
             if (! $employee) {
@@ -41,7 +39,7 @@ class EnsureStoreAccess
             }
 
             if (! session()->has('active_store_id')) {
-                session(['active_store_id' => $employee->id]);
+                session(['active_store_id' => $employee->store_id]);
             }
         }
 
