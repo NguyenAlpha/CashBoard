@@ -29,6 +29,10 @@
                        class="hidden sm:inline transition {{ request()->routeIs('cash.*') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
                         Tiền mặt
                     </a>
+                    <a href="{{ route('import.index') }}"
+                       class="hidden sm:inline transition {{ request()->routeIs('import.*') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
+                        Import
+                    </a>
                     <a href="{{ route('export.index') }}"
                        class="hidden sm:inline transition {{ request()->routeIs('export.*') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
                         Xuất báo cáo
