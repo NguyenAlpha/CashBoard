@@ -17,16 +17,31 @@
 
             <div class="flex items-center gap-4 text-sm">
                 @auth
+                    <a href="{{ route('dashboard') }}"
+                       class="hidden sm:inline transition {{ request()->routeIs('dashboard') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
+                        Dashboard
+                    </a>
+                    <a href="{{ route('transactions.index') }}"
+                       class="hidden sm:inline transition {{ request()->routeIs('transactions.*') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
+                        Giao dịch
+                    </a>
+                    <a href="{{ route('cash.index') }}"
+                       class="hidden sm:inline transition {{ request()->routeIs('cash.*') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
+                        Tiền mặt
+                    </a>
+
+                    <span class="text-gray-200 hidden sm:inline">|</span>
+
                     {{-- Tên store đang active --}}
                     @if(session('active_store_name'))
                         <a href="{{ route('stores.index') }}"
-                            class="text-gray-600 hover:text-orange-500 transition font-medium hidden sm:inline">
+                            class="text-gray-500 hover:text-orange-500 transition hidden sm:inline">
                             🏪 {{ session('active_store_name') }}
                         </a>
                     @endif
 
                     <span class="text-gray-400 hidden sm:inline">|</span>
-                    <span class="text-gray-600 hidden sm:inline">{{ auth()->user()->name }}</span>
+                    <span class="text-gray-500 hidden sm:inline">{{ auth()->user()->name }}</span>
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

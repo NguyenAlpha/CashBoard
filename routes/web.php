@@ -52,7 +52,8 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::delete('/cash/{transaction}', [\App\Http\Controllers\CashEntryController::class, 'destroy'])->name('cash.destroy');
 
     // Transactions (TASK-08)
-    // Route::resource('transactions', TransactionController::class)->only(['index', 'edit', 'update', 'destroy']);
+    Route::get('/transactions', [\App\Http\Controllers\TransactionController::class, 'index'])->name('transactions.index');
+    Route::delete('/transactions/{transaction}', [\App\Http\Controllers\TransactionController::class, 'destroy'])->name('transactions.destroy');
 
     // Import (TASK-06)
     Route::get('/import', [\App\Http\Controllers\ImportController::class, 'index'])->name('import.index');
