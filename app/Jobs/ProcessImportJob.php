@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\ImportBatch;
+use App\Services\ImportService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -29,8 +30,7 @@ class ProcessImportJob implements ShouldQueue
         $batch->update(['status' => 'processing']);
 
         try {
-            // Logic parse sẽ được implement ở TASK-06
-            // app/Services/ImportService.php::process($batch)
+            app(ImportService::class)->process($batch);
         } catch (\Throwable $e) {
             $batch->update([
                 'status'    => 'failed',

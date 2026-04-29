@@ -20,7 +20,7 @@ class ImportBatch extends Model
 
     public function store(): BelongsTo
     {
-        return $this->belongsTo(Store::class);
+        return $this->belongsTo(Store::class)->withDefault(['timezone' => 'Asia/Ho_Chi_Minh']);
     }
 
     public function transactions(): HasMany

@@ -55,9 +55,9 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     // Route::resource('transactions', TransactionController::class)->only(['index', 'edit', 'update', 'destroy']);
 
     // Import (TASK-06)
-    // Route::get('/import', [ImportController::class, 'index'])->name('import.index');
-    // Route::post('/import', [ImportController::class, 'upload'])->name('import.upload');
-    // Route::post('/import/{batch}/map', [ImportController::class, 'map'])->name('import.map');
+    Route::get('/import', [\App\Http\Controllers\ImportController::class, 'index'])->name('import.index');
+    Route::post('/import', [\App\Http\Controllers\ImportController::class, 'upload'])->name('import.upload');
+    Route::post('/import/{batch}/map', [\App\Http\Controllers\ImportController::class, 'map'])->name('import.map');
 
     // Export (TASK-10)
     // Route::get('/export/transactions', [ExportController::class, 'transactions'])->name('export.transactions');
