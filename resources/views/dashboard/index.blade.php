@@ -107,14 +107,14 @@
                 $barCount     = count($rangeValues);
             @endphp
 
-            <div class="flex items-end gap-0.5 h-24">
+<div class="flex gap-0.5 h-24">
                 @foreach($rangeValues as $i => $val)
                     @php
                         $h   = max(round($val / $maxVal * 100), $val > 0 ? 4 : 1);
                         $lbl = \Carbon\Carbon::parse($rangeLabels[$i])->format('d/m');
                         $isToday = $rangeLabels[$i] === $today;
                     @endphp
-                    <div class="flex-1 flex flex-col items-center group relative">
+                    <div class="flex-1 h-full flex flex-col justify-end group relative">
                         <div class="w-full rounded-sm {{ $isToday ? 'bg-orange-400' : 'bg-orange-200 group-hover:bg-orange-300' }} transition"
                              style="height: {{ $h }}%">
                         </div>

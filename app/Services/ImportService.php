@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\RecalculateDailySummaryJob;
 use App\Models\ImportBatch;
 use App\Models\Transaction;
 use Carbon\Carbon;
@@ -51,6 +52,7 @@ class ImportService
 
         $storeId  = $batch->store_id;
         $imported = 0; $failed = 0; $errorLog = [];
+        $dates    = []; // thu thập ngày duy nhất để recalculate daily summary
 
         foreach ($parsedRows as $i => $parsed) {
             try {
@@ -71,6 +73,7 @@ class ImportService
                     'raw_data'        => null, // parser không giữ raw row
                 ]);
 
+                $dates[$parsed->transactedAt->copy()->timezone($tz)->toDateString()] = true;
                 $imported++;
             } catch (\Throwable $e) {
                 // Row lỗi không dừng cả batch — ghi log, tiếp tục row tiếp theo
@@ -81,6 +84,10 @@ class ImportService
 
         $batch->update(['status' => 'done', 'row_count' => count($parsedRows),
             'imported_count' => $imported, 'failed_count' => $failed, 'error_log' => $errorLog ?: null]);
+
+        foreach (array_keys($dates) as $date) {
+            RecalculateDailySummaryJob::dispatch($storeId, $date);
+        }
     }
 
     // Nhánh manual mapping: user tự chọn cột trên trang mapping sau khi upload
@@ -92,6 +99,7 @@ class ImportService
         // Dòng 1 là header — dùng để tra tên cột → index khi mapRow()
         $headers  = array_shift($rows);
         $imported = 0; $failed = 0; $errorLog = [];
+        $dates    = []; // thu thập ngày duy nhất để recalculate daily summary
 
         foreach ($rows as $index => $row) {
             $rowNum = $index + 2; // +2: mất 1 dòng header + Excel đánh số từ 1
@@ -127,6 +135,7 @@ class ImportService
                     'raw_data'        => array_combine($headers, $row), // lưu toàn bộ dòng gốc để debug
                 ]);
 
+                $dates[$transactedAt->toDateString()] = true;
                 $imported++;
             } catch (\Throwable $e) {
                 // Row lỗi không dừng cả batch — ghi log, tiếp tục row tiếp theo
@@ -137,6 +146,10 @@ class ImportService
 
         $batch->update(['status' => 'done', 'row_count' => count($rows),
             'imported_count' => $imported, 'failed_count' => $failed, 'error_log' => $errorLog ?: null]);
+
+        foreach (array_keys($dates) as $date) {
+            RecalculateDailySummaryJob::dispatch($storeId, $date);
+        }
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────

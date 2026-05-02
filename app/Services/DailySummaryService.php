@@ -92,7 +92,7 @@ class DailySummaryService
             ->whereBetween('summary_date', [$fromDate, $toDate])
             ->orderBy('summary_date')
             ->get()
-            ->keyBy('summary_date');
+            ->keyBy(fn ($s) => $s->summary_date->toDateString());
 
         // Đảm bảo mọi ngày trong khoảng đều có record (kể cả ngày = 0)
         $result = [];
