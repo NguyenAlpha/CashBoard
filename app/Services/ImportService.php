@@ -23,40 +23,95 @@ class ImportService
 
     /**
      * Xử lý toàn bộ file, map cột, lưu transactions.
+     * Dispatcher: chọn nhánh auto-parser hoặc manual mapping.
      */
     public function process(ImportBatch $batch): void
     {
-        $mapping  = $batch->column_mapping;
+        $mapping = $batch->column_mapping;
+        $tz      = $batch->store->timezone ?? 'Asia/Ho_Chi_Minh';
+        $rows    = $this->readRows(storage_path('app/private/' . $batch->filename), $batch->source_type);
+
+        if (isset($mapping['auto_parser'])) {
+            $this->processAuto($batch, $rows, $mapping, $tz);
+        } else {
+            $this->processManual($batch, $rows, $mapping, $tz);
+        }
+    }
+
+    // Nhánh auto-parser: file ngân hàng đã được nhận dạng tự động khi upload
+    // column_mapping['auto_parser'] = tên class parser do ImportController lưu lại
+    private function processAuto(ImportBatch $batch, array $rows, array $mapping, string $tz): void
+    {
+        /** @var \App\Services\XlsxParser\BaseXlsxParser $parser */
+        $parser = new $mapping['auto_parser']();
+
+        // Parser tự xử lý toàn bộ: bỏ dòng metadata, tìm dòng header,
+        // map cột theo đặc thù từng ngân hàng → trả về ParsedRow[] chuẩn hoá
+        $parsedRows = $parser->normalize($rows, $tz);
+
         $storeId  = $batch->store_id;
-        $tz       = $batch->store->timezone ?? 'Asia/Ho_Chi_Minh';
-        $filePath = storage_path('app/private/' . $batch->filename);
+        $imported = 0; $failed = 0; $errorLog = [];
 
-        $rows = $this->readRows($filePath, $batch->source_type);
+        foreach ($parsedRows as $i => $parsed) {
+            try {
+                // Dedup qua reference_id (số chứng từ): skip nếu đã tồn tại trong store
+                // Đảm bảo import cùng file nhiều lần không tạo transaction trùng
+                if ($parsed->referenceId && Transaction::where('store_id', $storeId)->where('reference_id', $parsed->referenceId)->exists()) {
+                    continue;
+                }
 
-        $headers     = array_shift($rows); // bỏ dòng header
-        $imported    = 0;
-        $failed      = 0;
-        $errorLog    = [];
+                Transaction::create([
+                    'store_id'        => $storeId,
+                    'import_batch_id' => $batch->id,
+                    'amount'          => $parsed->amount,
+                    'source'          => $mapping['source'],
+                    'transacted_at'   => $parsed->transactedAt, // parser đã convert sang UTC
+                    'reference_id'    => $parsed->referenceId,
+                    'note'            => $parsed->note,
+                    'raw_data'        => null, // parser không giữ raw row
+                ]);
+
+                $imported++;
+            } catch (\Throwable $e) {
+                // Row lỗi không dừng cả batch — ghi log, tiếp tục row tiếp theo
+                $failed++;
+                $errorLog[] = ['row' => $i + 1, 'error' => $e->getMessage()];
+            }
+        }
+
+        $batch->update(['status' => 'done', 'row_count' => count($parsedRows),
+            'imported_count' => $imported, 'failed_count' => $failed, 'error_log' => $errorLog ?: null]);
+    }
+
+    // Nhánh manual mapping: user tự chọn cột trên trang mapping sau khi upload
+    // column_mapping chứa: ['source' => ..., 'amount' => 'tên cột', 'transacted_at' => 'tên cột', ...]
+    private function processManual(ImportBatch $batch, array $rows, array $mapping, string $tz): void
+    {
+        $storeId = $batch->store_id;
+
+        // Dòng 1 là header — dùng để tra tên cột → index khi mapRow()
+        $headers  = array_shift($rows);
+        $imported = 0; $failed = 0; $errorLog = [];
 
         foreach ($rows as $index => $row) {
-            $rowNum = $index + 2; // +2 vì bỏ header + 1-indexed
-
+            $rowNum = $index + 2; // +2: mất 1 dòng header + Excel đánh số từ 1
             try {
+                // Lấy giá trị ô theo tên cột user đã chọn trong trang mapping
                 $mapped = $this->mapRow($headers, $row, $mapping);
 
                 $amount = $this->parseAmount($mapped['amount'] ?? null);
                 if ($amount === null || $amount <= 0) {
-                    throw new \RuntimeException("Số tiền không hợp lệ: " . ($mapped['amount'] ?? 'trống'));
+                    throw new \RuntimeException('Số tiền không hợp lệ: ' . ($mapped['amount'] ?? 'trống'));
                 }
 
                 $transactedAt = $this->parseDate($mapped['transacted_at'] ?? null, $tz);
                 if ($transactedAt === null) {
-                    throw new \RuntimeException("Ngày không hợp lệ: " . ($mapped['transacted_at'] ?? 'trống'));
+                    throw new \RuntimeException('Ngày không hợp lệ: ' . ($mapped['transacted_at'] ?? 'trống'));
                 }
 
                 $referenceId = $this->normalizeReference($mapped['reference_id'] ?? null);
 
-                // Deduplication: bỏ qua nếu đã tồn tại
+                // Dedup: skip nếu reference_id đã tồn tại trong store
                 if ($referenceId && Transaction::where('store_id', $storeId)->where('reference_id', $referenceId)->exists()) {
                     continue;
                 }
@@ -66,38 +121,32 @@ class ImportService
                     'import_batch_id' => $batch->id,
                     'amount'          => $amount,
                     'source'          => $mapping['source'],
-                    'transacted_at'   => $transactedAt->utc(),
+                    'transacted_at'   => $transactedAt->utc(), // manual parse trả timezone store → đổi sang UTC
                     'reference_id'    => $referenceId,
                     'note'            => $mapped['note'] ?? null,
-                    'raw_data'        => array_combine($headers, $row),
+                    'raw_data'        => array_combine($headers, $row), // lưu toàn bộ dòng gốc để debug
                 ]);
 
                 $imported++;
             } catch (\Throwable $e) {
+                // Row lỗi không dừng cả batch — ghi log, tiếp tục row tiếp theo
                 $failed++;
                 $errorLog[] = ['row' => $rowNum, 'error' => $e->getMessage()];
             }
         }
 
-        $batch->update([
-            'status'         => 'done',
-            'row_count'      => count($rows),
-            'imported_count' => $imported,
-            'failed_count'   => $failed,
-            'error_log'      => $errorLog ?: null,
-        ]);
+        $batch->update(['status' => 'done', 'row_count' => count($rows),
+            'imported_count' => $imported, 'failed_count' => $failed, 'error_log' => $errorLog ?: null]);
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────
 
-    private function readRows(string $filePath, string $sourceType, ?int $limit = null): array
+    public function readRows(string $filePath, string $sourceType, ?int $limit = null): array
     {
         $rows = [];
 
         if ($sourceType === 'csv') {
-            $options = new CsvOptions();
-            $options->FIELD_DELIMITER = ',';
-            $reader = new CsvReader($options);
+            $reader = new CsvReader(new CsvOptions(FIELD_DELIMITER: ','));
         } else {
             $reader = new XlsxReader();
         }
@@ -108,7 +157,7 @@ class ImportService
             foreach ($sheet->getRowIterator() as $row) {
                 $rows[] = array_map(
                     fn ($cell) => (string) $cell->getValue(),
-                    $row->getCells()
+                    $row->cells
                 );
 
                 if ($limit !== null && count($rows) >= $limit) {
@@ -167,18 +216,8 @@ class ImportService
             return null;
         }
 
-        $formats = [
-            'd/m/Y H:i:s',
-            'd/m/Y H:i',
-            'd/m/Y',
-            'Y-m-d H:i:s',
-            'Y-m-d H:i',
-            'Y-m-d',
-            'd-m-Y H:i:s',
-            'd-m-Y',
-        ];
-
-        foreach ($formats as $format) {
+        // Format có giờ → giữ nguyên timestamp
+        foreach (['d/m/Y H:i:s', 'd/m/Y H:i', 'Y-m-d H:i:s', 'Y-m-d H:i', 'd-m-Y H:i:s'] as $format) {
             try {
                 return Carbon::createFromFormat($format, trim($value), $tz);
             } catch (\Throwable) {
@@ -186,9 +225,17 @@ class ImportService
             }
         }
 
-        // Fallback: Carbon::parse
+        // Format chỉ có ngày → về 00:00:00, tránh Carbon điền giờ hiện tại
+        foreach (['d/m/Y', 'Y-m-d', 'd-m-Y'] as $format) {
+            try {
+                return Carbon::createFromFormat($format, trim($value), $tz)->startOfDay();
+            } catch (\Throwable) {
+                continue;
+            }
+        }
+
         try {
-            return Carbon::parse($value, $tz);
+            return Carbon::parse(trim($value), $tz)->startOfDay();
         } catch (\Throwable) {
             return null;
         }

@@ -64,6 +64,7 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::get('/import', [\App\Http\Controllers\ImportController::class, 'index'])->name('import.index');
     Route::post('/import', [\App\Http\Controllers\ImportController::class, 'upload'])->name('import.upload');
     Route::post('/import/{batch}/map', [\App\Http\Controllers\ImportController::class, 'map'])->name('import.map');
+    Route::delete('/import/{batch}', [\App\Http\Controllers\ImportController::class, 'destroy'])->name('import.destroy');
 
     // Export (TASK-10)
     Route::get('/export', [\App\Http\Controllers\ExportController::class, 'index'])->name('export.index');

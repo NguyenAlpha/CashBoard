@@ -99,9 +99,21 @@
                                 </p>
                             @endif
                         </div>
-                        <span class="text-xs font-medium px-2 py-1 rounded-full {{ $statusColor }}">
-                            {{ $statusLabel }}
-                        </span>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-xs font-medium px-2 py-1 rounded-full {{ $statusColor }}">
+                                {{ $statusLabel }}
+                            </span>
+                            @if(!in_array($batch->status, ['pending', 'processing']))
+                                <form method="POST" action="{{ route('import.destroy', $batch) }}"
+                                      onsubmit="return confirm('Xoá lịch sử import này và toàn bộ giao dịch liên quan?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition">
+                                        Xoá
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
                 @empty
                     <div class="py-8 text-center text-gray-400">

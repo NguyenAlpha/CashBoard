@@ -6,6 +6,7 @@ use App\Helpers\StoreContext;
 use App\Jobs\ProcessImportJob;
 use App\Models\ImportBatch;
 use App\Services\ImportService;
+use App\Services\XlsxParser\XlsxParserFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -37,7 +38,7 @@ class ImportController extends Controller
         $path = $file->storeAs(
             'imports',
             now()->format('Ymd_His') . '_' . $file->getClientOriginalName(),
-            'private'
+            'local'
         );
 
         $batch = ImportBatch::create([
@@ -47,9 +48,9 @@ class ImportController extends Controller
             'status'      => 'pending',
         ]);
 
-        // Đọc headers để hiển thị trang mapping
+        // Chỉ đọc 15 dòng đầu — đủ để detect metadata ngân hàng mà không load cả file
         try {
-            $headers = $service->readHeaders(storage_path('app/private/' . $path), $sourceType);
+            $previewRows = $service->readRows(storage_path('app/private/' . $path), $sourceType, limit: 15);
         } catch (\Throwable $e) {
             $batch->update(['status' => 'failed', 'error_log' => [['message' => $e->getMessage()]]]);
 
@@ -57,9 +58,27 @@ class ImportController extends Controller
                 ->with('error', 'Không đọc được file: ' . $e->getMessage());
         }
 
+        // Nếu nhận dạng được format ngân hàng: lưu class parser vào column_mapping,
+        // dispatch job xử lý nền, bỏ qua trang mapping thủ công
+        $parser = (new XlsxParserFactory())->detect($previewRows);
+        if ($parser !== null) {
+            $batch->update([
+                'column_mapping' => [
+                    'auto_parser' => get_class($parser), // ImportService dùng để khởi tạo đúng parser
+                    'source'      => $request->input('source'),
+                ],
+            ]);
+            ProcessImportJob::dispatch($batch->id);
+
+            return redirect()->route('import.index')
+                ->with('success', 'Đã nhận dạng định dạng ' . $parser->bankLabel() . ', đang xử lý...');
+        }
+
+        // Không nhận dạng được: hiển thị trang mapping thủ công
+        // previewRows[0] là dòng header của file (chuẩn: dòng 1 = tên cột)
         return view('import.map', [
             'batch'   => $batch,
-            'headers' => $headers,
+            'headers' => $previewRows[0] ?? [],
             'source'  => $request->input('source'),
         ]);
     }
@@ -90,6 +109,17 @@ class ImportController extends Controller
 
         return redirect()->route('import.index')
             ->with('success', 'Đang xử lý file import. Kết quả sẽ hiển thị sau ít phút.');
+    }
+
+    public function destroy(ImportBatch $batch): RedirectResponse
+    {
+        $this->authorizeBatch($batch);
+
+        $batch->transactions()->delete();
+        $batch->delete();
+
+        return redirect()->route('import.index')
+            ->with('success', 'Đã xoá lịch sử import và ' . $batch->imported_count . ' giao dịch liên quan.');
     }
 
     private function authorizeBatch(ImportBatch $batch): void
