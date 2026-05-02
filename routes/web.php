@@ -29,10 +29,13 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::get('/', fn () => redirect()->route('dashboard'));
     Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
 
-    // Stores — edit/update/activate (TASK-03)
-    Route::get('/stores/{store}/edit', [\App\Http\Controllers\StoreController::class, 'edit'])->name('stores.edit');
-    Route::patch('/stores/{store}', [\App\Http\Controllers\StoreController::class, 'update'])->name('stores.update');
-    Route::post('/stores/{store}/activate', [\App\Http\Controllers\StoreController::class, 'activate'])->name('stores.activate');
+    // Stores — owner-only (TASK-03)
+    Route::middleware('owner')->group(function () {
+        Route::get('/stores', [\App\Http\Controllers\StoreController::class, 'index'])->name('stores.index');
+        Route::get('/stores/{store}/edit', [\App\Http\Controllers\StoreController::class, 'edit'])->name('stores.edit');
+        Route::patch('/stores/{store}', [\App\Http\Controllers\StoreController::class, 'update'])->name('stores.update');
+        Route::post('/stores/{store}/activate', [\App\Http\Controllers\StoreController::class, 'activate'])->name('stores.activate');
+    });
 
     // Employees (TASK-04) — index accessible by all, mutations owner-only
     Route::get('/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])->name('employees.index');
@@ -66,11 +69,6 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::get('/export', [\App\Http\Controllers\ExportController::class, 'index'])->name('export.index');
     Route::get('/export/transactions', [\App\Http\Controllers\ExportController::class, 'transactions'])->name('export.transactions');
     Route::get('/export/summary', [\App\Http\Controllers\ExportController::class, 'summary'])->name('export.summary');
-
-    // Owner-only areas
-    Route::middleware('owner')->group(function () {
-        Route::get('/stores', [\App\Http\Controllers\StoreController::class, 'index'])->name('stores.index');
-    });
 
 });
 
