@@ -34,13 +34,15 @@ Route::middleware(['auth', 'store.access'])->group(function () {
     Route::patch('/stores/{store}', [\App\Http\Controllers\StoreController::class, 'update'])->name('stores.update');
     Route::post('/stores/{store}/activate', [\App\Http\Controllers\StoreController::class, 'activate'])->name('stores.activate');
 
-    // Employees (TASK-04)
+    // Employees (TASK-04) — index accessible by all, mutations owner-only
     Route::get('/employees', [\App\Http\Controllers\EmployeeController::class, 'index'])->name('employees.index');
-    Route::get('/employees/create', [\App\Http\Controllers\EmployeeController::class, 'create'])->name('employees.create');
-    Route::post('/employees', [\App\Http\Controllers\EmployeeController::class, 'store'])->name('employees.store');
-    Route::get('/employees/{employee}/edit', [\App\Http\Controllers\EmployeeController::class, 'edit'])->name('employees.edit');
-    Route::patch('/employees/{employee}', [\App\Http\Controllers\EmployeeController::class, 'update'])->name('employees.update');
-    Route::post('/employees/{employee}/toggle', [\App\Http\Controllers\EmployeeController::class, 'toggleActive'])->name('employees.toggle');
+    Route::middleware('owner')->group(function () {
+        Route::get('/employees/create', [\App\Http\Controllers\EmployeeController::class, 'create'])->name('employees.create');
+        Route::post('/employees', [\App\Http\Controllers\EmployeeController::class, 'store'])->name('employees.store');
+        Route::get('/employees/{employee}/edit', [\App\Http\Controllers\EmployeeController::class, 'edit'])->name('employees.edit');
+        Route::patch('/employees/{employee}', [\App\Http\Controllers\EmployeeController::class, 'update'])->name('employees.update');
+        Route::post('/employees/{employee}/toggle', [\App\Http\Controllers\EmployeeController::class, 'toggleActive'])->name('employees.toggle');
+    });
 
     // Shifts (TASK-04)
     Route::post('/shifts/open', [\App\Http\Controllers\ShiftController::class, 'open'])->name('shifts.open');

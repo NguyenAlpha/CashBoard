@@ -37,6 +37,12 @@
                        class="hidden sm:inline transition {{ request()->routeIs('export.*') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
                         Xuất báo cáo
                     </a>
+                    @if(auth()->user()->role === 'owner')
+                    <a href="{{ route('employees.index') }}"
+                       class="hidden sm:inline transition {{ request()->routeIs('employees.*') ? 'text-orange-500 font-semibold' : 'text-gray-600 hover:text-orange-500' }}">
+                        Nhân viên
+                    </a>
+                    @endif
 
                     <span class="text-gray-200 hidden sm:inline">|</span>
 
