@@ -1,6 +1,6 @@
 # CashBoard — CLAUDE.md
 
-SaaS quản lý dòng tiền cho nhà hàng/quán nhỏ tại Việt Nam. Phiên bản hiện tại: **v0.1**.
+SaaS quản lý dòng tiền cho nhà hàng/quán nhỏ tại Việt Nam. Phiên bản hiện tại: **v0.2**.
 
 ---
 
@@ -53,8 +53,29 @@ Mọi query đều phải filter theo `store_id = StoreContext::id()`.
 
 ### Daily Summary
 - Idempotent UPSERT qua `DailySummaryService::recalculate(storeId, summaryDate)`
-- Trigger: `RecalculateDailySummaryJob` (dispatch sau mỗi transaction create/delete)
+- Trigger: `RecalculateDailySummaryJob` (dispatch sau mỗi transaction create/delete và sau import)
 - Fallback live-query nếu chưa có cache: `getOrCalculate()`
+- `getRange()` dùng `keyBy(fn($s) => $s->summary_date->toDateString())` vì `summary_date` cast thành Carbon
+
+### XLSX Import (auto-parser)
+- Plugin pattern: mỗi ngân hàng là 1 class extends `BaseXlsxParser` trong `App\Services\XlsxParser\`
+- Factory: `XlsxParserFactory::detect(previewRows)` duyệt parser, nhận diện qua metadata
+- Nếu detect được → lưu `auto_parser` class vào `column_mapping`, dispatch `ProcessImportJob` (bỏ qua trang mapping)
+- Nếu không detect → hiển thị trang mapping thủ công
+- Parser đã có: `VcbDigibankXlsxParser` (VCB DigiBank XLSX)
+- `ParsedRow`: DTO chuẩn hoá (amount, transactedAt UTC, referenceId, note)
+- Dedup qua `reference_id` unique per store (soft-delete vẫn block re-import cùng reference_id)
+
+### OpenSpout 5.x API (breaking vs v4)
+- `CsvOptions`: readonly constructor → `new CsvOptions(FIELD_DELIMITER: ',')`
+- Row cells: `$row->cells` (không phải `getCells()`)
+- Style: immutable → `new Style(fontBold: true)` (không có setter)
+- Row style: gắn vào từng cell → `Cell::fromValue($v, $style)`, rồi `new Row([...])`
+- `Row::fromValues()` arg 2 là `float $height`, không phải style
+
+### Laravel gotchas
+- `ConvertEmptyStringsToNull` middleware: `?source=` (rỗng) → `null`; dùng `$request->input('source') ?? ''` thay vì default param
+- Disk `'private'` không tồn tại trong Laravel 13; dùng disk `'local'` (root = `storage/app/private`)
 
 ### Email parser (inbound webhook)
 - Plugin pattern: mỗi ngân hàng là 1 class extends `BaseEmailParser`
@@ -95,6 +116,8 @@ Mọi query đều phải filter theo `store_id = StoreContext::id()`.
 | TASK-10 | Excel export (transactions + daily summary) |
 | TASK-11 | Queue & background jobs scaffold |
 | TASK-12 | Daily summary aggregation service |
+| TASK-13 | VCB DigiBank XLSX auto-parser (plugin pattern) |
+| TASK-14 | Dashboard mở rộng: tuần/tháng/tháng trước, nguồn 30 ngày, top 5 ngày, ca hôm nay, import widget |
 
 ---
 
