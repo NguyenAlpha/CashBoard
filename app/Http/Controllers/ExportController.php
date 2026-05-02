@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Helpers\StoreContext;
 use App\Services\ExportService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -29,7 +28,7 @@ class ExportController extends Controller
         $tz      = session('active_store_timezone', 'Asia/Ho_Chi_Minh');
         $from    = $request->from;
         $to      = $request->to;
-        $source  = $request->input('source', '');
+        $source  = $request->input('source') ?? '';
 
         $filename = 'transactions_' . $from . '_' . $to . '.xlsx';
 

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Transaction;
 use Carbon\Carbon;
+use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Common\Entity\Style\Style;
 use OpenSpout\Writer\XLSX\Writer;
@@ -42,16 +43,11 @@ class ExportService
         $writer->openToFile('php://output');
 
         // Header row
-        $headerStyle = (new Style())->setFontBold();
-        $writer->addRow(Row::fromValues([
-            'Thời gian',
-            'Nguồn',
-            'Số tiền (đ)',
-            'Ghi chú',
-            'Mã tham chiếu',
-            'Ca',
-            'Nhân viên',
-        ], $headerStyle));
+        $headerStyle = new Style(fontBold: true);
+        $writer->addRow(new Row(array_map(
+            fn ($v) => Cell::fromValue($v, $headerStyle),
+            ['Thời gian', 'Nguồn', 'Số tiền (đ)', 'Ghi chú', 'Mã tham chiếu', 'Ca', 'Nhân viên']
+        )));
 
         $query->chunk(500, function ($rows) use ($writer, $tz) {
             foreach ($rows as $tx) {
@@ -88,16 +84,11 @@ class ExportService
         $writer  = new Writer($options);
         $writer->openToFile('php://output');
 
-        $headerStyle = (new Style())->setFontBold();
-        $writer->addRow(Row::fromValues([
-            'Ngày',
-            'Tổng (đ)',
-            'Tiền mặt (đ)',
-            'QR Ngân hàng (đ)',
-            'Ví điện tử (đ)',
-            'Thẻ (đ)',
-            'Số GD',
-        ], $headerStyle));
+        $headerStyle = new Style(fontBold: true);
+        $writer->addRow(new Row(array_map(
+            fn ($v) => Cell::fromValue($v, $headerStyle),
+            ['Ngày', 'Tổng (đ)', 'Tiền mặt (đ)', 'QR Ngân hàng (đ)', 'Ví điện tử (đ)', 'Thẻ (đ)', 'Số GD']
+        )));
 
         foreach ($summaries as $s) {
             $writer->addRow(Row::fromValues([
